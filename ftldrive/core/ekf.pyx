@@ -17,28 +17,25 @@ def sequential_ekf(state, obs_value, obs_error, obs_idx, inflation=None,
 
     if inflation is not None:
         inflation = np.atleast_1d(inflation).astype('double')
-        inflation = np.broadcast_to(inflation, obs.shape)
 
     if localization is not None:
-        localization = np.atleast_1d(localization).astype('double')
-        localization = np.broadcast_to(localization, obs.shape)
+        localization = np.atleast_2d(localization).astype('double')
 
     state = fast_obs_assimilation(state, obs, error, idx, inflation, localization)
 
     return np.asarray(state)
 
 
-# TODO(brews): Go through and declair key arrays as contiguous (https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html)
-@cython.boundscheck(False)
-@cython.wraparound(False)
+# TODO(brews): Go through and declare key arrays as contiguous (https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html)
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
 cdef double[:,:] fast_obs_assimilation(double[:,:] state, double[:] obs_value, 
-    double[:] obs_error, long[:] obs_idx, double[:,:] inflation=None, 
+    double[:] obs_error, long[:] obs_idx, double[:] inflation=None,
     double[:,:] localization=None):
 
     cdef long n = len(obs_value)
     cdef double[:] obs_estimate
 
-    cdef double[:] this_inflation = None
     cdef double[:] this_localization = None
 
     if localization is None:
@@ -46,20 +43,18 @@ cdef double[:,:] fast_obs_assimilation(double[:,:] state, double[:] obs_value,
 
     for i in range(n):
         obs_estimate = np.ravel(state[obs_idx[i]])
-        if inflation is not None:
-            this_inflation = inflation[i]
         if localization is not None:
             this_localization = localization[i]
         state[...] = sequential_filter(prior_ensemble=state, obs=obs_value[i],
                                        obs_estimate=obs_estimate, 
                                        obs_error=obs_error[i], 
-                                       inflation=this_inflation,
+                                       inflation=inflation,
                                        localization=this_localization)
     return state
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
 cdef double[:,:] sequential_filter(double[:,:] prior_ensemble, double obs, 
     double[:] obs_estimate, double obs_error, double[:] inflation=None,
     double[:] localization=None):
