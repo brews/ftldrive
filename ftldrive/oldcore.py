@@ -1,6 +1,7 @@
 import numpy as np
 
-def sequential_ekf(state, obs_value, obs_error, obs_idx):
+
+def sequential_ekf(state, obs_value, obs_error, obs_idx, inflation=None, localization=None):
     state = np.atleast_2d(state)
     obs_value = np.atleast_1d(obs_value)
     obs_error = np.atleast_1d(obs_error)
@@ -13,10 +14,16 @@ def sequential_ekf(state, obs_value, obs_error, obs_idx):
 
     for i in range(n):
         obs_estimate = np.ravel(state[idx[i]])
-        state[...] = update_state(prior_ensemble=state,
-                                  obs=obs[i],
-                                  obs_estimate=obs_estimate, 
-                                  obs_error=error[i])
+
+        # If localization is None. Best to ask forgiveness.
+        try:
+            loc = localization[i]
+        except TypeError:
+            loc = None
+
+        state[...] = update_state(prior_ensemble=state, obs=obs[i],
+                                  obs_estimate=obs_estimate, obs_error=error[i],
+                                  inflation=inflation, localization=loc)
     return state
 
 
@@ -30,7 +37,7 @@ def update_state(prior_ensemble, obs, obs_estimate, obs_error, localization=None
     prior_anomaly = prior_ensemble - prior_mean[:, None]  # "None" means replicate in this dimension
 
     # ensemble mean and variance of the background estimate of the proxy 
-    obs_estimate_mean   = np.mean(obs_estimate)
+    obs_estimate_mean = np.mean(obs_estimate)
     obs_estimate_var = np.var(obs_estimate)
 
     obs_estimate_anomaly = obs_estimate - obs_estimate_mean
@@ -58,7 +65,7 @@ def update_state(prior_ensemble, obs, obs_estimate, obs_error, localization=None
     gain = beta * gain
     obs_estimate_anomaly = np.atleast_2d(obs_estimate_anomaly)
     gain = np.atleast_2d(gain)
-    update_anomaly  = prior_anomaly - np.transpose(gain) @ obs_estimate_anomaly
+    update_anomaly = prior_anomaly - np.transpose(gain) @ obs_estimate_anomaly
 
     # full state
     # import pdb;pdb.set_trace()
