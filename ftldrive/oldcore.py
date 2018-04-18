@@ -1,7 +1,8 @@
 import numpy as np
 
 
-def sequential_ekf(state, obs_value, obs_error, obs_idx, inflation=None, localization=None):
+def sequential_ekf(state, obs_value, obs_error, obs_idx, inflation=None,
+                   localization=None):
     state = np.atleast_2d(state)
     obs_value = np.atleast_1d(obs_value)
     obs_error = np.atleast_1d(obs_error)
@@ -27,7 +28,8 @@ def sequential_ekf(state, obs_value, obs_error, obs_idx, inflation=None, localiz
     return state
 
 
-def update_state(prior_ensemble, obs, obs_estimate, obs_error, localization=None, inflation=None):
+def update_state(prior_ensemble, obs, obs_estimate, obs_error,
+                 localization=None, inflation=None):
 
     # Get ensemble size from passed array: prior_ensemble has dims [state vect.,ens. members]
     n_ensemble = prior_ensemble.shape[-1]
