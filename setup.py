@@ -1,5 +1,5 @@
 import os
-
+import numpy as np
 from Cython.Build import cythonize
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
@@ -30,6 +30,7 @@ write_version_py()
 
 ftlcore = Extension('ftldrive.core.ekf',
                   sources=['ftldrive/core/ekf.pyx'],
+                  include_dirs=[np.get_include()]
                   )
 
 setup_kwargs = dict(name='ftldrive',
