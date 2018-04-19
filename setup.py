@@ -6,8 +6,8 @@ from setuptools.extension import Extension
 
 MAJOR = 0
 MINOR = 0
-MICRO = 1
-VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
+MICRO = '1a1'
+VERSION = '{}.{}.{}'.format(MAJOR, MINOR, MICRO)
 FULLVERSION = VERSION
 
 
