@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ftldrive.core import sequential_ekf
+from ftldrive.oldcore import sequential_ekf
 
 
 @pytest.fixture()
