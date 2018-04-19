@@ -28,8 +28,8 @@ short_version = '%s'
 
 write_version_py()
 
-ftlcore = Extension('ftldrive.core.ekf',
-                  sources=['ftldrive/core/ekf.pyx'],
+cythoncore = Extension('ftldrive.backend.cython.ekf',
+                  sources=['ftldrive/backend/cython/ekf.pyx'],
                   include_dirs=[np.get_include()]
                   )
 
@@ -62,6 +62,6 @@ setup_kwargs = dict(name='ftldrive',
 
 # Deal with bad linking bug with conda in readthedocs builds.
 if os.environ.get('READTHEDOCS') != 'True':
-    setup_kwargs['ext_modules'] = cythonize([ftlcore])
+    setup_kwargs['ext_modules'] = cythonize([cythoncore])
 
 setup(**setup_kwargs)

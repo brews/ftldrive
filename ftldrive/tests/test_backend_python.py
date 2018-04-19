@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ftldrive.oldcore import sequential_ekf
+from ftldrive.core import sequential_ekf
 
 
 @pytest.fixture()
@@ -47,7 +47,7 @@ def simple_bstate():
 
 ])
 def test_sequential_ekf(simple_bstate, in_kwargs, goal):
-    ustate = sequential_ekf(simple_bstate.copy(), **in_kwargs)
+    ustate = sequential_ekf(simple_bstate.copy(), **in_kwargs, backend='cython')
 
     np.testing.assert_allclose(ustate.mean(axis=1), goal['mean'], atol=1e-3, rtol=0)
     np.testing.assert_allclose(ustate.var(axis=1), goal['var'], atol=1e-3, rtol=0)
