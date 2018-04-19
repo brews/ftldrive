@@ -28,7 +28,7 @@ def sequential_ekf(state, obs_value, obs_error, obs_idx, inflation=None,
 
 # TODO(brews): Go through and declare key arrays as contiguous (https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html)
 # @cython.boundscheck(False)
-# @cython.wraparound(False)
+@cython.wraparound(False)
 cdef double[:,:] fast_obs_assimilation(double[:,:] state, double[:] obs_value, 
     double[:] obs_error, long[:] obs_idx, double[:] inflation=None,
     double[:,:] localization=None):
@@ -51,7 +51,7 @@ cdef double[:,:] fast_obs_assimilation(double[:,:] state, double[:] obs_value,
 
 
 # @cython.boundscheck(False)
-# @cython.wraparound(False)
+@cython.wraparound(False)
 cdef double[:,:] sequential_filter(double[:,:] prior_ensemble, double obs, 
     double[:] obs_estimate, double obs_error, double[:] inflation=None,
     double[:] localization=None):
