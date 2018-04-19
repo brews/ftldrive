@@ -38,9 +38,6 @@ cdef double[:,:] fast_obs_assimilation(double[:,:] state, double[:] obs_value,
 
     cdef double[:] this_localization = None
 
-    if localization is None:
-        print('boo')
-
     for i in range(n):
         obs_estimate = np.ravel(state[obs_idx[i]])
         if localization is not None:
