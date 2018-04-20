@@ -3,8 +3,8 @@ cimport numpy as cnp
 cimport cython
 
 
-def sequential_ekf(state, obs_value, obs_error, obs_idx, inflation=None, 
-                   localization=None):
+def serial_ensrf(state, obs_value, obs_error, obs_idx, inflation=None,
+                 localization=None):
     state = np.atleast_2d(state).astype('double')
     obs_value = np.atleast_1d(obs_value).astype('double')
     obs_error = np.atleast_1d(obs_error).astype('double')

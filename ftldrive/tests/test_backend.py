@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ftldrive.core import sequential_ekf
+from ftldrive.core import serial_ensrf
 
 
 @pytest.fixture()
@@ -48,24 +48,24 @@ basic_test_conditions = [
 
 
 def assert_assimilation_moments(observed, desired):
-    """Assert-test the mean and variance of an observed state with dired mean and var"""
+    """Assert-test the mean and variance of an observed state with desired mean and var"""
     np.testing.assert_allclose(observed.mean(axis=1), desired['mean'], atol=1e-3, rtol=0)
     np.testing.assert_allclose(observed.var(axis=1), desired['var'], atol=1e-3, rtol=0)
 
 
 @pytest.mark.parametrize('in_kwargs,goal', basic_test_conditions)
-def test_python_sequential_ekf(simple_bstate, in_kwargs, goal):
-    ustate = sequential_ekf(simple_bstate.copy(), backend='python', **in_kwargs)
+def test_python_serial_ensrf(simple_bstate, in_kwargs, goal):
+    ustate = serial_ensrf(simple_bstate.copy(), backend='python', **in_kwargs)
     assert_assimilation_moments(ustate, goal)
 
 
 @pytest.mark.parametrize('in_kwargs,goal', basic_test_conditions)
-def test_cython_sequential_ekf(simple_bstate, in_kwargs, goal):
-    ustate = sequential_ekf(simple_bstate.copy(), backend='cython', **in_kwargs)
+def test_cython_serial_ensrf(simple_bstate, in_kwargs, goal):
+    ustate = serial_ensrf(simple_bstate.copy(), backend='cython', **in_kwargs)
     assert_assimilation_moments(ustate, goal)
 
 
 @pytest.mark.parametrize('in_kwargs,goal', basic_test_conditions)
-def test_numba_sequential_ekf(simple_bstate, in_kwargs, goal):
-    ustate = sequential_ekf(simple_bstate.copy(), backend='numba', **in_kwargs)
+def test_numba_serial_ensrf(simple_bstate, in_kwargs, goal):
+    ustate = serial_ensrf(simple_bstate.copy(), backend='numba', **in_kwargs)
     assert_assimilation_moments(ustate, goal)
