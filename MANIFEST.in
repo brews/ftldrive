@@ -1,5 +1,0 @@
-include LICENSE
-recursive-include doc *
-prune doc/_build
-prune doc/generated
-recursive-include snakebacon *.pyx *.px[di] *.h *.c *.cpp

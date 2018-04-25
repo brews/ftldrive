@@ -1,8 +1,5 @@
 import os
-import numpy as np
-from Cython.Build import cythonize
 from setuptools import setup, find_packages
-from setuptools.extension import Extension
 
 MAJOR = 0
 MINOR = 0
@@ -28,10 +25,7 @@ short_version = '%s'
 
 write_version_py()
 
-cythoncore = Extension('ftldrive.backend.cython.ekf',
-                  sources=['ftldrive/backend/cython/ekf.pyx'],
-                  include_dirs=[np.get_include()]
-                  )
+
 
 setup_kwargs = dict(name='ftldrive',
                     version=FULLVERSION,
@@ -55,13 +49,8 @@ setup_kwargs = dict(name='ftldrive',
 
                         'Programming Language :: Python :: 3'],
                     keywords='assimilation kalman',
-                    install_requires=['numpy', 'Cython', 'pandas', 'numba'],
+                    install_requires=['numpy', 'pandas', 'numba'],
                     packages=find_packages(),
-                    package_data={'ftldrive': ['tests/*.csv']},
                     )
-
-# Deal with bad linking bug with conda in readthedocs builds.
-if os.environ.get('READTHEDOCS') != 'True':
-    setup_kwargs['ext_modules'] = cythonize([cythoncore])
 
 setup(**setup_kwargs)

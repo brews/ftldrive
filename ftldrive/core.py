@@ -1,5 +1,4 @@
 from ftldrive.backend.python import serial_ensrf as serial_ensrf_python
-from ftldrive.backend.cython import serial_ensrf as serial_ensrf_cython
 from ftldrive.backend.numba import serial_ensrf as serial_ensrf_numba
 
 
@@ -18,17 +17,12 @@ def _python_backend(*args, **kwargs):
     return serial_ensrf_python(*args, **kwargs)
 
 
-@backend_registry('cython')
-def _cython_backend(*args, **kwargs):
-    return serial_ensrf_cython(*args, **kwargs)
-
-
 @backend_registry('numba')
-def _cython_backend(*args, **kwargs):
+def _numba_backend(*args, **kwargs):
     return serial_ensrf_numba(*args, **kwargs)
 
 
-def serial_ensrf(*args, backend='python', **kwargs):
+def serial_ensrf(*args, backend='numba', **kwargs):
     """Serial processing ensemble square root filter
 
     This function dispatches to the appropriate backend function.
