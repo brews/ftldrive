@@ -54,12 +54,6 @@ def assert_assimilation_moments(observed, desired):
 
 
 @pytest.mark.parametrize('in_kwargs,goal', basic_test_conditions)
-def test_python_serial_ensrf(simple_bstate, in_kwargs, goal):
-    ustate = serial_ensrf(simple_bstate.copy(), backend='python', **in_kwargs)
-    assert_assimilation_moments(ustate, goal)
-
-
-@pytest.mark.parametrize('in_kwargs,goal', basic_test_conditions)
 def test_numba_serial_ensrf(simple_bstate, in_kwargs, goal):
     ustate = serial_ensrf(simple_bstate.copy(), backend='numba', **in_kwargs)
     assert_assimilation_moments(ustate, goal)

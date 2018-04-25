@@ -1,4 +1,3 @@
-from ftldrive.backend.python import serial_ensrf as serial_ensrf_python
 from ftldrive.backend.numba import serial_ensrf as serial_ensrf_numba
 
 
@@ -10,11 +9,6 @@ def backend_registry(key):
         BACKEND_DISPATCH[key] = func
         return func
     return decorator
-
-
-@backend_registry('python')
-def _python_backend(*args, **kwargs):
-    return serial_ensrf_python(*args, **kwargs)
 
 
 @backend_registry('numba')
