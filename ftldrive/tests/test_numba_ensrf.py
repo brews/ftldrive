@@ -2,13 +2,25 @@ import pytest
 import numpy as np
 from ftldrive.backend.numba.ensrf import (ensemble_mean, sample_var_1d,
     sample_cov_2d1d, kalman_gain, modified_kalman_gain, analysis_deviation,
-    analysis_mean, update, obs_assimilation_loop, serial_ensrf)
+    analysis_mean, update, obs_assimilation_loop, serial_ensrf, inflate_state_variance)
 
 
 def test_ensemble_mean():
     victim = np.arange(15).reshape(5, 3)
     goal = np.array([[1.0, 4.0, 7.0, 10.0, 13.0]]).T
     actual = ensemble_mean(victim)
+    np.testing.assert_allclose(actual, goal, atol=1e-15, rtol=0)
+
+
+def test_inflate_state_variance():
+    state = np.arange(15).reshape(5, 3)
+    inflation = np.ones((state.shape[0], 1)) * 2.0
+    goal = np.array([[-1., 1., 3.],
+                     [2., 4., 6.],
+                     [5., 7., 9.],
+                     [8., 10., 12.],
+                     [11., 13., 15.]])
+    actual = inflate_state_variance(x=state, infl=inflation)
     np.testing.assert_allclose(actual, goal, atol=1e-15, rtol=0)
 
 
@@ -77,9 +89,8 @@ def test_update():
     yb = xb[2, :]
     y0 = 6.5
     r = 0.25
-    infl = 1
     loc = 1
-    actual = update(xb=xb, yb=yb, y0=y0, r=r, infl=infl, loc=loc)
+    actual = update(xb=xb, yb=yb, y0=y0, r=r, loc=loc)
     goal = np.array([[0.0763932, 0.8, 1.5236068],
                      [3.0763932, 3.8, 4.5236068],
                      [6.0763932, 6.8, 7.5236068],
@@ -92,8 +103,8 @@ def test_obs_assimilation_loop_1obs():
     state = np.arange(15).reshape(5, 3)
     obs = np.array([6.5])
     obs_error = np.array([0.25])
-    obs_idx = np.array([(2), ])
-    inflation = np.array([1])
+    obs_idx = np.array([2, ])
+    inflation = np.ones((state.shape[0], 1))
     localization = np.ones((len(obs), state.shape[0]))
     actual = obs_assimilation_loop(state=state, obs=obs, obs_error=obs_error,
                                    obs_idx=obs_idx, inflation=inflation,
@@ -114,8 +125,8 @@ def test_obs_assimilation_loop_1obs2():
                      [12.0763932, 12.8, 13.5236068]])
     obs = np.array([0.4])
     obs_error = np.array([0.35])
-    obs_idx = np.array([(0), ])
-    inflation = np.ones(obs.shape)
+    obs_idx = np.array([0, ])
+    inflation = np.ones((state.shape[0], 1))
     localization = np.ones((len(obs), state.shape[0]))
     actual = obs_assimilation_loop(state=state, obs=obs, obs_error=obs_error,
                                    obs_idx=obs_idx, inflation=inflation,
@@ -130,11 +141,10 @@ def test_obs_assimilation_loop_1obs2():
 
 def test_obs_assimilation_loop_2obs():
     state = np.arange(15).reshape(5, 3)
-    m = state.shape[0]
     obs = np.array([6.5, 0.4])
     obs_error = np.array([0.25, 0.35])
-    obs_idx = np.array([(2), (0)])
-    inflation = np.ones(m)
+    obs_idx = np.array([2, 0])
+    inflation = np.ones((state.shape[0], 1))
     localization = np.ones((len(obs)))
     actual = obs_assimilation_loop(state=state, obs=obs, obs_error=obs_error,
                                    obs_idx=obs_idx, inflation=inflation,
@@ -151,7 +161,7 @@ def test_serial_ensrf():
     state = np.arange(15).reshape(5, 3)
     obs = np.array([6.5, 0.4])
     obs_error = np.array([0.25, 0.35])
-    obs_idx = np.array([(2), (0)])
+    obs_idx = np.array([2, 0])
     goal = np.array([[0.08931723, 0.68012758, 1.27093793],
                      [3.08931723, 3.68012758, 4.27093793],
                      [6.08931723, 6.68012758, 7.27093793],
@@ -162,18 +172,35 @@ def test_serial_ensrf():
     np.testing.assert_allclose(actual, goal, atol=1e-7, rtol=0)
 
 
-def test_serial_ensrf_inflation():
+def test_serial_ensrf_inflation_1obs():
+    state = np.arange(15).reshape(5, 3)
+    m = state.shape[0]
+    obs = np.array([0.4])
+    obs_error = np.array([0.35])
+    obs_idx = np.array([0])
+    inflation = np.ones((m, 1)) * 2.0
+    goal = np.array([[-0.55951638, 0.72413793, 2.00779225],
+                     [2.44048362, 3.72413793, 5.00779225],
+                     [5.44048362, 6.72413793, 8.00779225],
+                     [8.44048362, 9.72413793, 11.00779225],
+                     [11.44048362, 12.72413793, 14.00779225]])
+    actual = serial_ensrf(state=state, obs_value=obs, obs_error=obs_error,
+                          obs_idx=obs_idx, inflation=inflation, localization=None)
+    np.testing.assert_allclose(actual, goal, atol=1e-7, rtol=0)
+
+
+def test_serial_ensrf_inflation_2obs():
     state = np.arange(15).reshape(5, 3)
     m = state.shape[0]
     obs = np.array([6.5, 0.4])
     obs_error = np.array([0.25, 0.35])
-    obs_idx = np.array([(2), (0)])
-    inflation = np.ones(m) * 2.0
-    goal = np.array([[-0.48309776, 0.51431828, 1.51173433],
-                     [2.51690224, 3.51431828, 4.51173433],
-                     [5.51690224, 6.51431828, 7.51173433],
-                     [8.51690224, 9.51431828, 10.51173433],
-                     [11.51690224, 12.51431828, 13.51173433]])
+    obs_idx = np.array([2, 0])
+    inflation = np.ones((m, 1)) * 2.0
+    goal = np.goal = np.array([[-0.27229131, 0.61605256, 1.50439643],
+                               [2.72770869, 3.61605256, 4.50439643],
+                               [5.72770869, 6.61605256, 7.50439643],
+                               [8.72770869, 9.61605256, 10.50439643],
+                               [11.72770869, 12.61605256, 13.50439643]])
     actual = serial_ensrf(state=state, obs_value=obs, obs_error=obs_error,
                           obs_idx=obs_idx, inflation=inflation, localization=None)
     np.testing.assert_allclose(actual, goal, atol=1e-7, rtol=0)
@@ -183,7 +210,7 @@ def test_serial_ensrf_localization():
     state = np.arange(15).reshape(5, 3)
     obs = np.array([6.5, 0.4])
     obs_error = np.array([0.25, 0.35])
-    obs_idx = np.array([(2), (0)])
+    obs_idx = np.array([2, 0])
     localization = np.array([[0, 0.5, 1.0, 0.5, 0],
                              [1.0, 0.5, 0, 0, 0]])
     goal = np.array([[0.02319024, 0.77777778, 1.53236532],
@@ -202,14 +229,14 @@ def test_serial_ensrf_localization_inflation():
     m = state.shape[0]
     obs = np.array([6.5, 0.4])
     obs_error = np.array([0.25, 0.35])
-    obs_idx = np.array([(2), (0)])
-    inflation = np.ones(m) * 2.0
+    obs_idx = np.array([2, 0])
+    inflation = np.ones((m, 1)) * 2.0
     localization = np.array([[0, 0.5, 1.0, 0.5, 0],
                              [1.0, 0.5, 0, 0, 0]])
     goal = np.array([[-0.55951638, 0.72413793, 2.00779225],
-                     [2.26619834, 3.68113057, 5.09606279],
-                     [5.1527864, 6.6, 8.0472136],
-                     [8.0763932, 9.8, 11.5236068],
+                     [2.43962061, 3.77054137, 5.10146213],
+                     [5.52217026, 6.76470588, 8.00724151],
+                     [8.26108513, 9.88235294, 11.50362075],
                      [11.0, 13.0, 15.0]])
     actual = serial_ensrf(state=state, obs_value=obs, obs_error=obs_error,
                           obs_idx=obs_idx, inflation=inflation,

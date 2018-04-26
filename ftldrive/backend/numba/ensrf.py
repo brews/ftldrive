@@ -58,9 +58,9 @@ def serial_ensrf(state, obs_value, obs_error, obs_idx, inflation=None,
     p = len(obs_value)
 
     if inflation is not None:
-        inflation = np.atleast_1d(inflation)
+        inflation = np.atleast_2d(inflation)
     else:
-        inflation = np.ones(m)
+        inflation = np.ones((m, 1))
 
     if localization is not None:
         localization = np.atleast_2d(localization)
@@ -113,22 +113,21 @@ def obs_assimilation_loop(state, obs, obs_error, obs_idx, inflation,
     """
     p = len(obs)
 
-    updated_state = update(xb=state, yb=state[obs_idx[0]], y0=obs[0],
-                        r=obs_error[0], infl=inflation, loc=localization[0])
+    updated_state = inflate_state_variance(x=state, infl=inflation)
+    updated_state = update(xb=updated_state, yb=updated_state[obs_idx[0]], y0=obs[0], r=obs_error[0],
+                           loc=localization[0])
 
     if p == 1:
         return updated_state
 
     for i in range(1, p):
-        updated_state[...] = update(xb=updated_state,
-                                    yb=updated_state[obs_idx[i]],
-                                    y0=obs[i], r=obs_error[i],
+        updated_state = update(xb=updated_state, yb=updated_state[obs_idx[i]], y0=obs[i], r=obs_error[i],
                                     loc=localization[i])
     return updated_state
 
 
 @njit
-def update(xb, yb, y0, r, infl=1, loc=1):
+def update(xb, yb, y0, r, loc=1):
     """Serial ensemble square root filter update step.
 
     Parameters
@@ -142,11 +141,6 @@ def update(xb, yb, y0, r, infl=1, loc=1):
         Observation.
     r : scalar
         Observation error (variance).
-    infl : array_like
-        1D (m) inflation factor applied to background state deviations before
-        the background error covariance is calculated and before any
-        observations are assimilated. A value of 1 leaves the covariance
-        unchanged.
     loc : array_like
         1D (m) covariance localization weights for background error covariance.
         A value of 1 leaves the covariance unchanged.
@@ -170,9 +164,6 @@ def update(xb, yb, y0, r, infl=1, loc=1):
     # Background state mean and deviation.
     xb_bar = ensemble_mean(xb)  # (m x 1)
     xb_prime = xb - xb_bar  # (m x n)
-
-    # Apply background deviation inflation.
-    xb_prime *= infl
 
     # Obs estimate mean and deviation.
     yb_bar = np.mean(yb)  # (scalar)
@@ -263,6 +254,27 @@ def ensemble_mean(x):
         x_bar[i, 0] = np.sum(x[i, :]) / n
 
     return x_bar
+
+
+@njit
+def inflate_state_variance(x, infl):
+    """Inflate state vector ensemble deviations by a factor.
+
+    Parameters
+    ----------
+    x : array_like
+        2D (m x n) State vector with `m` elements and `n` ensemble members.
+    infl : array_like
+        2D (m x 1) Inflation factor to apply to state vector deviations.
+
+    Returns
+    -------
+    out : array_like
+        2D (m x n) inflated state vector ensemble.
+    """
+    x_bar = ensemble_mean(x)  # (m x 1)
+    return x_bar + (x - x_bar) * infl
+
 
 
 @njit
