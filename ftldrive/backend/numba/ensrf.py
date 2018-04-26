@@ -19,9 +19,10 @@ def serial_ensrf(state, obs_value, obs_error, obs_idx, inflation=None,
         1D (p) array containing indexes indicating which state vector element
         corresponds to a given observation.
     inflation : array_like
-        1D (m) array of values used to inflate the background error covariance
-        matrix. Values of 1 will leave the covariance unchanged. This inflation
-        is applied once, before any observations are assimilated.
+        1D (m) inflation factor applied to background state deviations before
+        the background error covariance is calculated and before any
+        observations are assimilated. A value of 1 leaves the covariance
+        unchanged.
     localization : array_like
         2D (p x m) or 1D (p) array of values multiplied against the background error
         covariance matrix to limit the influence of each observation on the
@@ -96,9 +97,10 @@ def obs_assimilation_loop(state, obs, obs_error, obs_idx, inflation,
         1D (p) array containing indexes indicating which state vector element
         corresponds to a given observation.
     inflation : array_like
-        1D (m) array of values used to inflate the background error covariance
-        matrix. Values of 1 will leave the covariance unchanged. This inflation
-        is applied once, before any observations have been assimilated.
+        1D (m) inflation factor applied to background state deviations before
+        the background error covariance is calculated and before any
+        observations are assimilated. A value of 1 leaves the covariance
+        unchanged.
     localization : array_like
         2D (p x m) or 1D (p) array of values multiplied against the background
         error covariance matrix to limit the influence of each observation on
@@ -111,16 +113,18 @@ def obs_assimilation_loop(state, obs, obs_error, obs_idx, inflation,
     """
     p = len(obs)
 
-    this_state = update(xb=state, yb=state[obs_idx[0]], y0=obs[0],
+    updated_state = update(xb=state, yb=state[obs_idx[0]], y0=obs[0],
                         r=obs_error[0], infl=inflation, loc=localization[0])
 
     if p == 1:
-        return this_state
+        return updated_state
 
     for i in range(1, p):
-        this_state[...] = update(xb=this_state, yb=this_state[obs_idx[i]],
-                                 y0=obs[i], r=obs_error[i], loc=localization[i])
-    return this_state
+        updated_state[...] = update(xb=updated_state,
+                                    yb=updated_state[obs_idx[i]],
+                                    y0=obs[i], r=obs_error[i],
+                                    loc=localization[i])
+    return updated_state
 
 
 @njit
@@ -139,8 +143,10 @@ def update(xb, yb, y0, r, infl=1, loc=1):
     r : scalar
         Observation error (variance).
     infl : array_like
-        1D (m) for background error covariance inflation. A value of 1 leaves
-        the covariance unchanged.
+        1D (m) inflation factor applied to background state deviations before
+        the background error covariance is calculated and before any
+        observations are assimilated. A value of 1 leaves the covariance
+        unchanged.
     loc : array_like
         1D (m) covariance localization weights for background error covariance.
         A value of 1 leaves the covariance unchanged.
@@ -165,6 +171,9 @@ def update(xb, yb, y0, r, infl=1, loc=1):
     xb_bar = ensemble_mean(xb)  # (m x 1)
     xb_prime = xb - xb_bar  # (m x n)
 
+    # Apply background deviation inflation.
+    xb_prime *= infl
+
     # Obs estimate mean and deviation.
     yb_bar = np.mean(yb)  # (scalar)
     yb_prime = yb - yb_bar  # (m)
@@ -174,8 +183,7 @@ def update(xb, yb, y0, r, infl=1, loc=1):
     yb_prime_var = sample_var_1d(yb_prime, ddof=1)  # (scalar)
     xb_prime_yb_prime_cov = sample_cov_2d1d(xb_prime, yb_prime, ddof=1)  # (m)
 
-    # Apply covariance inflation and localization weights
-    xb_prime_yb_prime_cov *= infl
+    # Apply covariance  localization weights.
     xb_prime_yb_prime_cov *= loc
 
     # Assemble kalman gains
