@@ -70,7 +70,7 @@ def serial_ensrf(state, obs_value, obs_error, obs_idx, inflation=None,
     assert p == len(error), 'obs_value and obs_error need to have the same first dim size'
     assert p == len(idx), 'obs_value and obs_idx need to have the same first dim size'
     assert inflation.shape[0] == m, 'state and inflation need to have the same first dim size'
-    assert localization.shape == (p, m) or localization.shape == (p,), 'state and inflation need to have the same first dim size'
+    assert localization.shape == (p, m) or localization.shape == (p,), 'state and localization need to have the same first dim size'
 
     updated_state = obs_assimilation_loop(state, obs, error, idx, inflation, localization)
 
@@ -114,14 +114,14 @@ def obs_assimilation_loop(state, obs, obs_error, obs_idx, inflation,
     p = len(obs)
 
     updated_state = inflate_state_variance(x=state, infl=inflation)
-    updated_state = update(xb=updated_state, yb=updated_state[obs_idx[0]], y0=obs[0], r=obs_error[0],
+    updated_state[:] = update(xb=updated_state, yb=updated_state[obs_idx[0]], y0=obs[0], r=obs_error[0],
                            loc=localization[0])
 
     if p == 1:
         return updated_state
 
     for i in range(1, p):
-        updated_state = update(xb=updated_state, yb=updated_state[obs_idx[i]], y0=obs[i], r=obs_error[i],
+        updated_state[:] = update(xb=updated_state, yb=updated_state[obs_idx[i]], y0=obs[i], r=obs_error[i],
                                     loc=localization[i])
     return updated_state
 
