@@ -10,7 +10,7 @@ def serial_ensrf(state, obs_value, obs_error, obs_idx, inflation=None,
     ----------
     state : array_like
         2D (m x n) state ensemble where m is the state vector size and n
-        is ensemble size. Must not contain NaNs.
+        is ensemble size.
     obs_value : array_like
         1D (p) array of observations to be assimilated.
     obs_error : array_like
@@ -88,7 +88,7 @@ def obs_assimilation_loop(state, obs, obs_error, obs_idx, inflation,
     ----------
     state : array_like
         2D (m x n) state ensemble where m is the state vector size and n
-        is ensemble size. Must not contain NaNs.
+        is ensemble size.
     obs : array_like
         1D (p) array of observations to be assimilated.
     obs_error : array_like
@@ -134,7 +134,7 @@ def update(xb, yb, y0, r, loc=1):
     ----------
     xb : array_like
         2D (m x n) background state vector ensemble where m is the state vector
-        size and n is ensemble size. Must not contain NaNs.
+        size and n is ensemble size.
     yb : array_like
         n-length ensemble of estimates for the observation.
     y0 : scalar
@@ -162,6 +162,7 @@ def update(xb, yb, y0, r, loc=1):
         https://doi.org/10.1175/1520-0493(2004)132<1190:RWRUED>2.0.CO;2
     """
     # Background state mean and deviation.
+    m, n = xb.shape
     xb_bar = ensemble_mean(xb)  # (m x 1)
     xb_prime = xb - xb_bar  # (m x n)
 
@@ -169,17 +170,17 @@ def update(xb, yb, y0, r, loc=1):
     yb_bar = np.mean(yb)  # (scalar)
     yb_prime = yb - yb_bar  # (m)
 
-    # Obs estimate variance and covariance with the rest of the background state
-    # (AKA background error covariance).
-    yb_prime_var = sample_var_1d(yb_prime, ddof=1)  # (scalar)
-    xb_prime_yb_prime_cov = sample_cov_2d1d(xb_prime, yb_prime, ddof=1)  # (m)
+    # Obs estimate deviation's sample variance.
+    yb_prime_var = np.dot(yb_prime, yb_prime) / (n - 1)  # (scalar)
+    # Obs estimate sample covariance with background state
+    # (i.e. background error covariance)
+    xb_prime_yb_prime_cov = np.dot(xb_prime, yb_prime) / (n - 1)  # (m)
 
     # Apply covariance  localization weights.
     xb_prime_yb_prime_cov *= loc
 
     # Assemble kalman gains
-    k = kalman_gain(xbye_cov=xb_prime_yb_prime_cov, yb_prime_var=yb_prime_var,
-                    r=r)
+    k = kalman_gain(xbye_cov=xb_prime_yb_prime_cov, yb_prime_var=yb_prime_var, r=r)
     k_tilde = modified_kalman_gain(yb_prime_var=yb_prime_var, r=r, k=k)
 
     # Analysis state mean and deviations.
@@ -187,45 +188,6 @@ def update(xb, yb, y0, r, loc=1):
     xa_bar = analysis_mean(xb_bar, k, y0, yb_bar)
 
     return xa_bar + xa_prime
-
-
-@njit
-def sample_var_1d(x_prime, ddof=1):
-    """Variance given a 1D array of deviations, given degrees of freedom.
-
-    Returns
-    -------
-    scalar
-    """
-    n = len(x_prime)
-    return np.sum(x_prime ** 2) / (n - ddof)
-
-
-@njit(parallel=True)
-def sample_cov_2d1d(x_prime, y_prime, ddof=1):
-    """Covariance given arrays of deviations and degrees of freedom.
-
-    Parameters
-    ----------
-    x_prime : ndarray
-        2D (m x n) array.
-    y_prime : ndarray
-        1D (n) array.
-    ddof : int, optional
-        Degrees freedom used for (n - ddof) as denominator. Default is 1.
-
-    Returns
-    -------
-    out : ndarray
-        1D (m) array of covariances.
-    """
-    m = x_prime.shape[0]
-    out = np.zeros(m)
-
-    for i in prange(m):
-        out[i] += np.sum(x_prime[i, :] * y_prime) / (m - ddof)
-
-    return out
 
 
 @njit(parallel=True)
@@ -239,7 +201,7 @@ def ensemble_mean(x):
     ----------
     x : ndarray
         2D (m x n) state vector ensemble, where m the state vector size and n is
-        ensemble size. Must not contain NaNs.
+        ensemble size.
 
     Returns
     -------
@@ -251,7 +213,7 @@ def ensemble_mean(x):
     n = x.shape[1]
 
     for i in prange(m):
-        x_bar[i, 0] = np.sum(x[i, :]) / n
+        x_bar[i, 0] = np.nanmean(x[i, :])
 
     return x_bar
 
