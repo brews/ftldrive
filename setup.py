@@ -49,7 +49,7 @@ setup_kwargs = dict(name='ftldrive',
 
                         'Programming Language :: Python :: 3'],
                     keywords='assimilation kalman',
-                    install_requires=['numpy', 'numba'],
+                    install_requires=['numpy', 'numba', 'scipy'],
                     packages=find_packages(),
                     )
 
