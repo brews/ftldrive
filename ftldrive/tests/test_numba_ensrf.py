@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from ftldrive.backend.numba.ensrf import (ensemble_mean, kalman_gain,
+from ftldrive.core import (ensemble_mean, kalman_gain,
     modified_kalman_gain, analysis_deviation, analysis_mean, update,
     obs_assimilation_loop, serial_ensrf, inflate_state_variance)
 
