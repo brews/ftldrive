@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def haversine_distance(latlon1, latlon2, sphere_radius=6378.137):
+def haversine_distance(latlon1, latlon2, sphere_radius=6371.0087714):
     """haversine distance between two sequences of (lat, lon) points
 
     Parameters
@@ -11,8 +11,7 @@ def haversine_distance(latlon1, latlon2, sphere_radius=6378.137):
     latlon2 : sequence of tuples
         A sequence of (latitude, longitude) for another set of points.
     sphere_radius: float
-        Radius of sphere we are calculating distances on. Default is 6378.137,
-        Earth radius in km.
+        Radius of sphere we are calculating distances on. Default is in km.
 
     Returns
     -------
@@ -43,7 +42,7 @@ def haversine_distance(latlon1, latlon2, sphere_radius=6378.137):
     return sphere_radius * c
 
 
-def chordal_distance(latlon1, latlon2, sphere_radius=6378.137):
+def chordal_distance(latlon1, latlon2, sphere_radius=6371.0087714):
     """Chordal distance between two sequences of (lat, lon) points
 
     Parameters
@@ -53,8 +52,7 @@ def chordal_distance(latlon1, latlon2, sphere_radius=6378.137):
     latlon2 : sequence of tuples
         A sequence of (latitude, longitude) for another set of points.
     sphere_radius: float
-        Radius of sphere we are calculating distances on. Default is 6378.137,
-        Earth radius in km.
+        Radius of sphere we are calculating distances on. Default is in km.
 
     Returns
     -------
