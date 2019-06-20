@@ -67,8 +67,6 @@ def chordal_distance(latlon1, latlon2, sphere_radius=6378.137):
     .. [1] https://en.wikipedia.org/wiki/Chord_(geometry)
 
     """
-    sphere_radius = 6378.137  # in km
-
     latlon1 = np.atleast_2d(latlon1)
     latlon2 = np.atleast_2d(latlon2)
 
